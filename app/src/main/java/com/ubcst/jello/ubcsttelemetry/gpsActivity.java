@@ -1,5 +1,7 @@
 package com.ubcst.jello.ubcsttelemetry;
 
+import android.content.Context;
+import android.content.Intent;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 import android.os.ParcelFileDescriptor;
@@ -7,15 +9,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
-public class gpsActivity extends AppCompatActivity {
+public class gpsActivity extends AppCompatActivity implements Runnable {
 
-    private static UsbAccessory linuxPC = UsbManager.getAccessory(intent);
-    private static ParcelFileDescriptor mFileDescriptor;
-    private static FileInputStream mInputStream;
-    private static FileOutputStream mOutputStream;
+    Intent intent  = getIntent();
+
+    private UsbManager manager = (UsbManager)getSystemService(Context.USB_SERVICE);
+    private UsbAccessory linuxPC = (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+    private ParcelFileDescriptor mFileDescriptor;
+    private FileInputStream mInputStream;
+    private FileOutputStream mOutputStream;
 
     private double latitude;
     private double longitude;
@@ -49,6 +55,25 @@ public class gpsActivity extends AppCompatActivity {
         longitudeMsg.setText(longitudeStr);
         timeMsg.setText(timestamp);
         rawMsg.setText(rawData);
+    }
+
+    private void openAccessory()
+    {
+        mFileDescriptor = manager.openAccessory(linuxPC);
+        if(mFileDescriptor != null)
+        {
+            FileDescriptor fd = mFileDescriptor.getFileDescriptor();
+            mInputStream = new FileInputStream(fd);
+            mOutputStream = new FileOutputStream(fd);
+            Thread thread = new Thread(null, this, "AccessoryThread");
+            thread.start();
+        }
+    }
+
+    @Override
+    public void run()
+    {
+
     }
 
 }

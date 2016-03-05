@@ -1,6 +1,13 @@
+*.iml
+.gradle
+.idea/*
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
 .DS_Store
 /build
 /captures
+*.swp
 
 # Created by https://www.gitignore.io/api/intellij,java,windows,linux
 

@@ -1,5 +1,6 @@
 package com.ubcst.jello.ubcsttelemetry;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbAccessory;
@@ -12,13 +13,15 @@ import android.widget.TextView;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class gpsActivity extends AppCompatActivity implements Runnable {
 
-    Intent intent  = getIntent();
+    Intent intent;
 
-    private UsbManager manager = (UsbManager)getSystemService(Context.USB_SERVICE);
-    private UsbAccessory linuxPC = (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+    private UsbManager manager;
+    private UsbAccessory linuxPC;
     private ParcelFileDescriptor mFileDescriptor;
     private FileInputStream mInputStream;
     private FileOutputStream mOutputStream;
@@ -30,31 +33,41 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
     private String eastwest;
     private String rawData;
 
+    TextView latitudeMsg;
+    TextView longitudeMsg;
+    TextView timeMsg;
+    TextView rawMsg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        intent = getIntent();
+        manager = (UsbManager)getSystemService(Context.USB_SERVICE);
+        linuxPC = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+
+        latitudeMsg = (TextView) findViewById(R.id.latitudeField);
+        longitudeMsg = (TextView) findViewById(R.id.longitudeField);
+        timeMsg = (TextView) findViewById(R.id.timeField);
+        rawMsg = (TextView) findViewById(R.id.rawDataField);
+
         setContentView(R.layout.activity_gps);
+    }
 
-        latitude = 90.4500;
-        longitude = 128.0900;
-        timestamp = "12:00:01 - TEST ONLY";
-        northsouth = "N - TEST ONLY";
-        eastwest = "W - TEST ONLY";
-        rawData = "$GPS,90.4500,N,128.0900,W,12:00:01,$END";
+    @Override
+    public void onResume()
+    {
+        super.onResume();
 
-        TextView latitudeMsg = (TextView) findViewById(R.id.latitudeField);
-        TextView longitudeMsg = (TextView) findViewById(R.id.longitudeField);
-        TextView timeMsg = (TextView) findViewById(R.id.timeField);
-        TextView rawMsg = (TextView) findViewById(R.id.rawDataField);
+        openAccessory();
+    }
 
-        String latitudeStr = latitude + northsouth;
-        String longitudeStr = longitude + eastwest;
-
-        latitudeMsg.setText(latitudeStr);
-        longitudeMsg.setText(longitudeStr);
-        timeMsg.setText(timestamp);
-        rawMsg.setText(rawData);
+    @Override
+    public void onDestroy()
+    {
+        closeAccessory();
+        unregisterReceiver(mUsbReceiver);
+        super.onDestroy();
     }
 
     private void openAccessory()
@@ -70,10 +83,65 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
         }
     }
 
+    private void closeAccessory()
+    {
+        try
+        {
+            if(mFileDescriptor != null)
+            {
+                mFileDescriptor.close();
+            }
+        }
+        catch (IOException e)
+        {
+        }
+        finally
+        {
+            mFileDescriptor = null;
+            linuxPC = null;
+        }
+    }
+
+    BroadcastReceiver mUsbReceiver = new BroadcastReceiver()
+    {
+        public void onReceive(Context context, Intent intent)
+        {
+            String action = intent.getAction();
+
+            if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action))
+            {
+                UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+                if (accessory != null) {
+                    closeAccessory();
+                }
+            }
+        }
+    };
+
     @Override
     public void run()
     {
+        int response = 0;
+        byte[] message = new byte[16384];
 
+        try
+        {
+            response = mInputStream.read(message);
+        }
+        catch( IOException e)
+        {
+            // Exception
+        }
+
+        if(response < 0)
+        {
+            rawMsg.setText("ERROR READING STREAM");
+        }
+        else
+        {
+            String str = new String(message);
+            rawMsg.setText(str);
+        }
     }
 
 }

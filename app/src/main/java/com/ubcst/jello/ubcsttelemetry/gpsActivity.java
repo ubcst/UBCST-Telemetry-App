@@ -1,13 +1,17 @@
 package com.ubcst.jello.ubcsttelemetry;
 
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.usb.UsbAccessory;
+import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.os.ParcelFileDescriptor;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 
 import java.io.FileDescriptor;
@@ -15,16 +19,24 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 public class gpsActivity extends AppCompatActivity implements Runnable {
 
     Intent intent;
+
+    private static final String TAG = "gpsActivity";
+    private static final String ACTION_USB_PERMISSION =
+            "com.android.example.USB_PERMISSION";
 
     private UsbManager manager;
     private UsbAccessory linuxPC;
     private ParcelFileDescriptor mFileDescriptor;
     private FileInputStream mInputStream;
     private FileOutputStream mOutputStream;
+    private PendingIntent mPermissionIntent;
 
     private double latitude;
     private double longitude;
@@ -43,15 +55,16 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
         super.onCreate(savedInstanceState);
 
         intent = getIntent();
-        manager = (UsbManager)getSystemService(Context.USB_SERVICE);
         linuxPC = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+
+        setContentView(R.layout.activity_gps);
+        setupAccessory();
 
         latitudeMsg = (TextView) findViewById(R.id.latitudeField);
         longitudeMsg = (TextView) findViewById(R.id.longitudeField);
         timeMsg = (TextView) findViewById(R.id.timeField);
         rawMsg = (TextView) findViewById(R.id.rawDataField);
 
-        setContentView(R.layout.activity_gps);
     }
 
     @Override
@@ -59,7 +72,7 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
     {
         super.onResume();
 
-        openAccessory();
+        openAccessory(linuxPC);
     }
 
     @Override
@@ -70,9 +83,35 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
         super.onDestroy();
     }
 
-    private void openAccessory()
+    private void openAccessory(UsbAccessory accessory)
     {
-        mFileDescriptor = manager.openAccessory(linuxPC);
+        if(accessory == null) {
+            Log.d(TAG, "Accessory is null");
+            return;
+        }
+        UsbAccessory[] accssories = manager.getAccessoryList();
+        for( UsbAccessory usbAccessory : accssories ) {
+            Log.d(TAG, usbAccessory.getDescription());
+            Log.d(TAG, usbAccessory.getManufacturer());
+            Log.d(TAG, usbAccessory.getModel());
+            Log.d(TAG, usbAccessory.getSerial());
+            Log.d(TAG, usbAccessory.getUri());
+            Log.d(TAG, usbAccessory.getVersion());
+            accessory = usbAccessory;
+        }
+        HashMap<String, UsbDevice> usbDevices = manager.getDeviceList();
+        Iterator iterator = usbDevices.keySet().iterator();
+        while(iterator.hasNext()) {
+            String usb = (String)iterator.next();
+            Log.d(TAG, "usb device: " + usb);
+        }
+        try {
+            mFileDescriptor = manager.openAccessory(accessory);
+        } catch(IllegalArgumentException e) {
+            Log.d(TAG, "Could not open accessory: " + accessory.getDescription());
+            return;
+        }
+
         if(mFileDescriptor != null)
         {
             FileDescriptor fd = mFileDescriptor.getFileDescriptor();
@@ -102,13 +141,38 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
         }
     }
 
+    private void setupAccessory(){
+        //Reference to USB System Service
+        manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        //Ask for USB Permission when an Accessory connects
+        mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(
+                ACTION_USB_PERMISSION), 0);
+        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
+        // Register the Receiver
+        registerReceiver(mUsbReceiver, filter);
+        openAccessory(linuxPC);
+    }
+
     BroadcastReceiver mUsbReceiver = new BroadcastReceiver()
     {
+        @Override
         public void onReceive(Context context, Intent intent)
         {
             String action = intent.getAction();
-
-            if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action))
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbAccessory accessory = (UsbAccessory) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
+                    if (intent.getBooleanExtra(
+                            UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        openAccessory(accessory);
+                    } else {
+                        Log.d(TAG, "permission denied for accessory "
+                                + accessory);
+                    }
+                    // mPermissionRequestPending = false;
+                }
+            } else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action))
             {
                 UsbAccessory accessory = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
                 if (accessory != null) {

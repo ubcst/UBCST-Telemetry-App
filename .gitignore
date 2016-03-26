@@ -6,6 +6,7 @@
 
 *.iml
 .idea/
+.gradle/
 
 # Created by https://www.gitignore.io/api/intellij,java,windows,linux
 

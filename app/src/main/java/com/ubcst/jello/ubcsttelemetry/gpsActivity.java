@@ -18,14 +18,11 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Set;
 
 public class gpsActivity extends AppCompatActivity implements Runnable {
-
-    Intent intent;
+    Intent intent = getIntent();
 
     private static final String TAG = "gpsActivity";
     private static final String ACTION_USB_PERMISSION =
@@ -50,6 +47,7 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
     TextView timeMsg;
     TextView rawMsg;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,7 +62,6 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
         longitudeMsg = (TextView) findViewById(R.id.longitudeField);
         timeMsg = (TextView) findViewById(R.id.timeField);
         rawMsg = (TextView) findViewById(R.id.rawDataField);
-
     }
 
     @Override
@@ -73,14 +70,17 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
         super.onResume();
 
         openAccessory(linuxPC);
+        rawMsg.setText(UsbPhone.getString());
     }
 
     @Override
     public void onDestroy()
     {
-        closeAccessory();
-        unregisterReceiver(mUsbReceiver);
         super.onDestroy();
+
+        // TODO Add null check before closing
+        UsbPhone.closeAccessory();
+        unregisterReceiver(UsbPhone.mUsbReceiver);
     }
 
     private void openAccessory(UsbAccessory accessory)
@@ -207,5 +207,4 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
             rawMsg.setText(str);
         }
     }
-
 }

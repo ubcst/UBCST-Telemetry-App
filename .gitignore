@@ -4,6 +4,9 @@
 /captures
 *.swp
 
+*.iml
+.idea/
+
 # Created by https://www.gitignore.io/api/intellij,java,windows,linux
 
 ### Intellij ###
@@ -34,6 +37,7 @@
 
 ## File-based project format:
 *.iws
+*.ipr
 
 ## Plugin-specific files:
 

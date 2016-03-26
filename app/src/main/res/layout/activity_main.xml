@@ -26,11 +26,11 @@
         android:textColor="@color/white"
         android:id="@+id/gpsButton"
         android:background="@color/colorPrimary"
-        android:layout_below="@+id/text_field"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="100dp"
         android:textSize="25dp"
-        android:onClick="gotoGPS"/>
+        android:onClick="gotoGPS"
+        android:layout_marginTop="50dp"
+        android:layout_below="@+id/text_field"
+        android:layout_alignStart="@+id/sensorButton" />
 
     <Button
         android:layout_width="300dp"
@@ -39,10 +39,23 @@
         android:textColor="@color/white"
         android:id="@+id/sensorButton"
         android:background="@color/colorPrimary"
-        android:layout_marginTop="100dp"
-        android:layout_below="@+id/gpsButton"
-        android:layout_alignStart="@+id/gpsButton"
+        android:layout_marginTop="50dp"
         android:textSize="25dp"
-        android:onClick="gotoSensor"/>
+        android:onClick="gotoSensor"
+        android:layout_below="@+id/gpsButton"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="100dp"
+        android:text="Connect Device"
+        android:textColor="@color/white"
+        android:id="@+id/connectButton"
+        android:background="@color/colorPrimary"
+        android:textSize="25dp"
+        android:onClick="gotoConnect"
+        android:layout_below="@+id/sensorButton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp" />
 
 </RelativeLayout>

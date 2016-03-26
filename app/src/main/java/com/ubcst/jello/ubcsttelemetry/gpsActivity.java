@@ -80,7 +80,11 @@ public class gpsActivity extends AppCompatActivity implements Runnable {
 
         // TODO Add null check before closing
         UsbPhone.closeAccessory();
-        unregisterReceiver(UsbPhone.mUsbReceiver);
+        try {
+            unregisterReceiver(mUsbReceiver);
+        } catch(IllegalArgumentException e) {
+            // IllegalArgumentException will be thrown if the receiver is not registered
+        }
     }
 
     private void openAccessory(UsbAccessory accessory)

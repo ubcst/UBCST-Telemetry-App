@@ -26,7 +26,7 @@ public final class UsbPhone implements Runnable{
 
     private static String str;
 
-    public static BroadcastReceiver mUsbReceiver = new BroadcastReceiver()
+    /*public static BroadcastReceiver mUsbReceiver = new BroadcastReceiver()
     {
         public void onReceive(Context context, Intent intent)
         {
@@ -40,7 +40,7 @@ public final class UsbPhone implements Runnable{
                 }
             }
         }
-    };
+    };*/
 
     // Methods
 
@@ -51,7 +51,13 @@ public final class UsbPhone implements Runnable{
 
     public static void openAccessory()
     {
-        mFileDescriptor = manager.openAccessory(linuxPC);
+        try {
+            mFileDescriptor = manager.openAccessory(linuxPC);
+        } catch(IllegalArgumentException e) {
+            // IllegalArgumentException when no accessory is attached
+            return;
+        }
+
         if(mFileDescriptor != null)
         {
             FileDescriptor fd = mFileDescriptor.getFileDescriptor();

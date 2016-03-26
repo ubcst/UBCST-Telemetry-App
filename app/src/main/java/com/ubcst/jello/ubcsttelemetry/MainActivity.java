@@ -21,8 +21,6 @@ public class MainActivity extends AppCompatActivity {
         UsbPhone.manager = (UsbManager)getSystemService(Context.USB_SERVICE);
         UsbPhone.linuxPC = intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY);
 
-
-
         // TODO: Move somewhere else. Just placing here for testing.
         // TODO: Check what context to pass into the the constructor.
         // Commenting out for now.
@@ -40,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy()
     {
         UsbPhone.closeAccessory();
-        unregisterReceiver(UsbPhone.mUsbReceiver);
 
         super.onDestroy();
     }
